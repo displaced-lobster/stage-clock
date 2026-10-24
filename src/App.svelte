@@ -1,6 +1,6 @@
 <script>
   const DB = import.meta.env.VITE_DB_URL
-  // ponytail: room name in the URL is the secret (capability URL); no auth. Add Firebase Auth if it must be revocable.
+  // room name in the URL is the secret (capability URL); no auth. Add Firebase Auth if it must be revocable.
   const q = new URLSearchParams(location.search)
   const room = q.get('k') || (DB ? null : 'dev')
   let admin = $state(location.hash === '#admin')
@@ -24,7 +24,10 @@
       const { path, data } = JSON.parse(e.data)
       if (path === '/' && data) s = data
     })
-    return () => es.close()
+    // poll too; some phones' browsers silently stall SSE (sleep, data saver). Drop if SSE proves reliable.
+    const poll = () => fetch(url).then((r) => r.json()).then((d) => d && (s = d)).catch(() => {})
+    const iv = setInterval(poll, 3000)
+    return () => (es.close(), clearInterval(iv))
   })
 
   const push = (patch) => {
@@ -39,6 +42,9 @@
     return { t: `${String(h % 12 || 12).padStart(2, "0")}:${String(m).padStart(2, '0')}`, ap: h < 12 ? 'AM' : 'PM' }
   })
 
+  const set = ({ h12 = +parts.t.slice(0, 2), m = +parts.t.slice(3), pm = parts.ap === 'PM' }) =>
+    push({ t: `${String((h12 % 12) + (pm ? 12 : 0)).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
+
   const fs = () => document.documentElement.requestFullscreen?.()
   const wake = () => navigator.wakeLock?.request('screen').catch(() => {})
 </script>
@@ -48,7 +54,18 @@
 {:else if admin}
   <main class="admin">
     <h1>Clock admin</h1>
-    <input type="time" value={s.t} oninput={(e) => e.target.value && push({ t: e.target.value })} />
+    <!-- selects, not <input type=time>, which hides AM/PM on 24h-locale browsers -->
+    <div class="pick">
+      <select value={parts.t.slice(0, 2)} onchange={(e) => set({ h12: +e.target.value })}>
+        {#each Array.from({ length: 12 }, (_, i) => i + 1) as h}<option value={h}>{String(h).padStart(2, '0')}</option>{/each}
+      </select>
+      <select value={parts.t.slice(3)} onchange={(e) => set({ m: +e.target.value })}>
+        {#each Array.from({ length: 60 }, (_, i) => i) as m}<option value={String(m).padStart(2, '0')}>{String(m).padStart(2, '0')}</option>{/each}
+      </select>
+      <select value={parts.ap} onchange={(e) => set({ pm: e.target.value === 'PM' })}>
+        <option>AM</option><option>PM</option>
+      </select>
+    </div>
     <button class:on={s.blank} onclick={() => push({ blank: !s.blank })}>
       {s.blank ? 'Screen is BLANK — tap to show' : 'Blank screen'}
     </button>
@@ -69,7 +86,8 @@
   .time { font: 700 28vw/1 'Courier New', monospace; text-shadow: 0 0 3vw #f008; }
   .ap { font: 700 7vw/1 'Courier New', monospace; align-self: flex-end; margin-bottom: 18vh; }
   .admin { max-width: 24rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
-  input, button { font: inherit; font-size: 2rem; padding: 1rem; border-radius: .5rem; border: 0; }
+  .pick { display: flex; gap: .5rem; }
+  select, button { font: inherit; font-size: 2rem; padding: 1rem; border-radius: .5rem; border: 0; }
   button { background: #333; color: #fff; }
   button.on { background: #b00; }
   .msg { padding: 1rem; opacity: .7; word-break: break-all; }
