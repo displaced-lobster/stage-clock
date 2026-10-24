@@ -1,0 +1,11 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "$room": {
+      ".read": true,
+      ".write": true,
+      ".validate": "newData.hasChildren(['t','blank']) && newData.child('t').isString() && newData.child('t').val().length <= 5 && newData.child('blank').isBoolean()"
+    }
+  }
+}
