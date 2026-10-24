@@ -57,7 +57,7 @@
     <!-- selects, not <input type=time>, which hides AM/PM on 24h-locale browsers -->
     <div class="pick">
       <select value={parts.t.slice(0, 2)} onchange={(e) => set({ h12: +e.target.value })}>
-        {#each Array.from({ length: 12 }, (_, i) => i + 1) as h}<option value={h}>{String(h).padStart(2, '0')}</option>{/each}
+        {#each Array.from({ length: 12 }, (_, i) => i + 1) as h}<option>{String(h).padStart(2, '0')}</option>{/each}
       </select>
       <select value={parts.t.slice(3)} onchange={(e) => set({ m: +e.target.value })}>
         {#each Array.from({ length: 60 }, (_, i) => i) as m}<option value={String(m).padStart(2, '0')}>{String(m).padStart(2, '0')}</option>{/each}
