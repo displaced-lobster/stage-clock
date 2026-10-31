@@ -45,6 +45,16 @@
   const set = ({ h12 = +parts.t.slice(0, 2), m = +parts.t.slice(3), pm = parts.ap === 'PM' }) =>
     push({ t: `${String((h12 % 12) + (pm ? 12 : 0)).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
 
+  // 7-segment: each segment is a hexagon; unlit ones drawn dim like a real LED display
+  const hex = (x1, y1, x2, y2) => {
+    const h = y1 === y2
+    const [a, b] = h ? [x1 + 1.4, x2 - 1.4] : [y1 + 1.4, y2 - 1.4]
+    const pt = (u, v) => (h ? `${u},${y1 + v}` : `${x1 + v},${u}`)
+    return [pt(a - 1, 0), pt(a, -1), pt(b, -1), pt(b + 1, 0), pt(b, 1), pt(a, 1)].join(' ')
+  }
+  const SEG = { a: hex(1, 1, 9, 1), b: hex(9, 1, 9, 9), c: hex(9, 9, 9, 17), d: hex(1, 17, 9, 17), e: hex(1, 9, 1, 17), f: hex(1, 1, 1, 9), g: hex(1, 9, 9, 9) }
+  const ON = ['abcdef', 'bc', 'abged', 'abgcd', 'fgbc', 'afgcd', 'afgedc', 'abc', 'abcdefg', 'abcdfg']
+
   const fs = () => document.documentElement.requestFullscreen?.()
   const wake = () => navigator.wakeLock?.request('screen').catch(() => {})
 </script>
@@ -75,7 +85,18 @@
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="display" onclick={() => { fs(); wake() }}>
     {#if !s.blank}
-      <span class="time">{parts.t}</span><span class="ap">{parts.ap}</span>
+      <div class="time">
+        {#each parts.t as ch}
+          {#if ch === ':'}
+            <svg viewBox="0 0 4 18" class="colon"><circle cx="2" cy="5" r="1.2" /><circle cx="2" cy="13" r="1.2" /></svg>
+          {:else}
+            <svg viewBox="0 0 10 18">
+              {#each Object.entries(SEG) as [k, pts]}<polygon points={pts} class:lit={ON[ch].includes(k)} />{/each}
+            </svg>
+          {/if}
+        {/each}
+      </div>
+      <div class="ap"><span class:lit={parts.ap === 'AM'}>AM</span><span class:lit={parts.ap === 'PM'}>PM</span></div>
     {/if}
   </div>
 {/if}
@@ -83,8 +104,13 @@
 <style>
   :global(html, body) { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, sans-serif; }
   .display { height: 100vh; display: flex; align-items: center; justify-content: center; gap: 2vw; color: #f00; cursor: none; user-select: none; }
-  .time { font: 700 28vw/1 'Courier New', monospace; text-shadow: 0 0 3vw #f008; }
-  .ap { font: 700 7vw/1 'Courier New', monospace; align-self: flex-end; margin-bottom: 18vh; }
+  .time { display: flex; gap: 1.2vw; transform: skewX(-6deg); }
+  .time svg { height: min(34vh, 20vw); fill: #f001; overflow: visible; }
+  .time .lit { fill: #f00; filter: drop-shadow(0 0 .6px #f00); }
+  .colon circle { fill: #f00; }
+  .ap { display: flex; flex-direction: column; gap: 1vh; font: 700 5vw/1 system-ui, sans-serif; letter-spacing: .1em; align-self: center; }
+  .ap span { color: #f001; }
+  .ap .lit { color: #f00; text-shadow: 0 0 1vw #f008; }
   .admin { max-width: 24rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1rem; }
   .pick { display: flex; gap: .5rem; }
   select, button { font: inherit; font-size: 2rem; padding: 1rem; border-radius: .5rem; border: 0; }
