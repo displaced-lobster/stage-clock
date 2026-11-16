@@ -105,7 +105,7 @@
   :global(html, body) { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, sans-serif; }
   .display { height: 100vh; display: flex; align-items: center; justify-content: center; gap: 2vw; color: #f00; cursor: none; user-select: none; }
   .time { display: flex; gap: 1.2vw; transform: skewX(-6deg); }
-  .time svg { height: min(100vh - 40px, (84vw - 40px) / 2.55); /* ponytail: 20px padding; width term budgets 4 digits + colon + AM/PM + gaps + skew */ fill: #f001; overflow: visible; }
+  .time svg { height: min(100vh - 20px, (86vw - 20px) / 2.5); /* ponytail: 10px padding; width term budgets 4 digits + colon + AM/PM + gaps + skew */ fill: #f001; overflow: visible; }
   .time .lit { fill: #f00; filter: drop-shadow(0 0 .6px #f00); }
   .colon circle { fill: #f00; }
   .ap { display: flex; flex-direction: column; gap: 1vh; font: 700 5vw/1 system-ui, sans-serif; letter-spacing: .1em; align-self: center; }
